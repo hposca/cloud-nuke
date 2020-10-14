@@ -1,0 +1,19 @@
+s3:
+  include:
+    names_regex:
+      - '^cloudfront-example-[a-zA-Z0-9]{6}\.gruntwork\.in.*'
+      - '^acme-stage-static-[a-z0-9]{6}\.gruntwork\.in(-((logs)|(cloudfront-logs)))?$'
+      - '^gruntwork-terratest-[a-zA-Z0-9]{6}$'
+      - '^gw-cis-aws-config-all-regions-[a-zA-Z0-9]{6}-.*'
+      - '^houston-static-[a-zA-Z0-9]{12}.*'
+      - '^cloud-nuke-test-[a-z0-9]{12}'
+      - '^zookeeper-cluster-test-[a-z0-9]{6}'
+      - '^kafka-zk-standalone-[a-z0-9]{6}'
+      - '^nlb-testnlbaccesslogs[a-z0-9]{6}-access-logs'
+      - '^terragrunt-test-bucket-[a-z0-9]{6}'
+      - '^[a-z0-9]{6}-service-test-s3-bucket'
+      - '^[a-z0-9]{6}-ecs-service-test-s3-bucket'
+      - '^vault-module-test-[a-z0-9]{6}'
+      - '^tst-openvpn-[a-z0-9]{6}'
+      - '^openvpn-test-[a-z0-9]{6}'
+      - '^gruntwork-test-[a-z0-9]{6}-config-test$'
