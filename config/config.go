@@ -19,8 +19,10 @@ type rawResourceType struct {
 	ExcludeRule rawFilterRule `yaml:"exclude"`
 }
 
+type rawNamesRE []string
+
 type rawFilterRule struct {
-	NamesRE []string `yaml:"names_regex"`
+	NamesRE rawNamesRE `yaml:"names_regex"`
 }
 
 // Config - the config object we pass around
@@ -37,14 +39,26 @@ type ResourceType struct {
 	ExcludeRule FilterRule
 }
 
+type compiledNamesRE []*regexp.Regexp
+
 // FilterRule - contains regular expressions or plain text patterns
 // used to match against a resource type's properties
 type FilterRule struct {
-	NamesRE []*regexp.Regexp
+	NamesRE compiledNamesRE
 }
 
-// appendRegex - ancillary function to append regular expressions into the FilterRules in the ConfigObj
-func appendRegex(configNamesRE *[]*regexp.Regexp, patterns []string) error {
+// association - an ancillary internal struct that is used to represent a 1:1
+// association between compiledNamesRE and a RawREs.
+// This is used o indicate which compiled regular expression should be
+// associated with the raw ones retrieved from the configuration file.
+type association struct {
+	CompiledREs *compiledNamesRE
+	RawREs      rawNamesRE
+}
+
+// appendRegex - ancillary function to compile and append regular expressions
+// into the ConfigObj's right location
+func appendRegex(configNamesRE *compiledNamesRE, patterns rawNamesRE) error {
 	for _, pattern := range patterns {
 		re, err := regexp.Compile(pattern)
 		if err != nil {
@@ -79,17 +93,17 @@ func GetConfig(filePath string) (*Config, error) {
 		return nil, err
 	}
 
-	if err := appendRegex(&configObj.S3.IncludeRule.NamesRE, rawConfig.S3.IncludeRule.NamesRE); err != nil {
-		return nil, err
+	associations := []association{
+		association{&configObj.S3.IncludeRule.NamesRE, rawConfig.S3.IncludeRule.NamesRE},
+		association{&configObj.S3.ExcludeRule.NamesRE, rawConfig.S3.ExcludeRule.NamesRE},
+		association{&configObj.IAMUsers.IncludeRule.NamesRE, rawConfig.IAMUsers.IncludeRule.NamesRE},
+		association{&configObj.IAMUsers.ExcludeRule.NamesRE, rawConfig.IAMUsers.ExcludeRule.NamesRE},
 	}
-	if err := appendRegex(&configObj.S3.ExcludeRule.NamesRE, rawConfig.S3.ExcludeRule.NamesRE); err != nil {
-		return nil, err
-	}
-	if err := appendRegex(&configObj.IAMUsers.IncludeRule.NamesRE, rawConfig.IAMUsers.IncludeRule.NamesRE); err != nil {
-		return nil, err
-	}
-	if err := appendRegex(&configObj.IAMUsers.ExcludeRule.NamesRE, rawConfig.IAMUsers.ExcludeRule.NamesRE); err != nil {
-		return nil, err
+
+	for _, association := range associations {
+		if err := appendRegex(association.CompiledREs, association.RawREs); err != nil {
+			return nil, err
+		}
 	}
 
 	return &configObj, nil
