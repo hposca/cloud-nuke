@@ -43,6 +43,20 @@ type FilterRule struct {
 	NamesRE []*regexp.Regexp
 }
 
+// appendRegex - ancillary function to append regular expressions into the FilterRules in the ConfigObj
+func appendRegex(configNamesRE *[]*regexp.Regexp, patterns []string) error {
+	for _, pattern := range patterns {
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			return err
+		}
+
+		*configNamesRE = append(*configNamesRE, re)
+	}
+
+	return nil
+}
+
 // GetConfig - unmarshall the raw config file
 // and parse it into a config object.
 func GetConfig(filePath string) (*Config, error) {
@@ -65,40 +79,17 @@ func GetConfig(filePath string) (*Config, error) {
 		return nil, err
 	}
 
-	for _, pattern := range rawConfig.S3.IncludeRule.NamesRE {
-		re, err := regexp.Compile(pattern)
-		if err != nil {
-			return nil, err
-		}
-
-		configObj.S3.IncludeRule.NamesRE = append(configObj.S3.IncludeRule.NamesRE, re)
+	if err := appendRegex(&configObj.S3.IncludeRule.NamesRE, rawConfig.S3.IncludeRule.NamesRE); err != nil {
+		return nil, err
 	}
-
-	for _, pattern := range rawConfig.S3.ExcludeRule.NamesRE {
-		re, err := regexp.Compile(pattern)
-		if err != nil {
-			return nil, err
-		}
-
-		configObj.S3.ExcludeRule.NamesRE = append(configObj.S3.ExcludeRule.NamesRE, re)
+	if err := appendRegex(&configObj.S3.ExcludeRule.NamesRE, rawConfig.S3.ExcludeRule.NamesRE); err != nil {
+		return nil, err
 	}
-
-	for _, pattern := range rawConfig.IAMUsers.IncludeRule.NamesRE {
-		re, err := regexp.Compile(pattern)
-		if err != nil {
-			return nil, err
-		}
-
-		configObj.IAMUsers.IncludeRule.NamesRE = append(configObj.IAMUsers.IncludeRule.NamesRE, re)
+	if err := appendRegex(&configObj.IAMUsers.IncludeRule.NamesRE, rawConfig.IAMUsers.IncludeRule.NamesRE); err != nil {
+		return nil, err
 	}
-
-	for _, pattern := range rawConfig.IAMUsers.ExcludeRule.NamesRE {
-		re, err := regexp.Compile(pattern)
-		if err != nil {
-			return nil, err
-		}
-
-		configObj.IAMUsers.ExcludeRule.NamesRE = append(configObj.IAMUsers.ExcludeRule.NamesRE, re)
+	if err := appendRegex(&configObj.IAMUsers.ExcludeRule.NamesRE, rawConfig.IAMUsers.ExcludeRule.NamesRE); err != nil {
+		return nil, err
 	}
 
 	return &configObj, nil
