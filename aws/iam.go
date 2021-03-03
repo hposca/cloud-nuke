@@ -1,52 +1,12 @@
 package aws
 
 import (
-	"regexp"
-
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/gruntwork-io/cloud-nuke/config"
 	"github.com/gruntwork-io/cloud-nuke/logging"
 	"github.com/gruntwork-io/gruntwork-cli/errors"
 )
-
-func includeUserByREList(userName string, reList []*regexp.Regexp) bool {
-	for _, re := range reList {
-		if re.MatchString(userName) {
-			return true
-		}
-	}
-	return false
-}
-
-func excludeUserByREList(userName string, reList []*regexp.Regexp) bool {
-	for _, re := range reList {
-		if re.MatchString(userName) {
-			return false
-		}
-	}
-
-	return true
-}
-
-func shouldIncludeUser(userName string, includeNamesREList []*regexp.Regexp, excludeNamesREList []*regexp.Regexp) bool {
-	shouldInclude := false
-
-	if len(includeNamesREList) > 0 {
-		// If any include rules are specified,
-		// only check to see if an exclude rule matches when an include rule matches the user
-		if includeUserByREList(userName, includeNamesREList) {
-			shouldInclude = excludeUserByREList(userName, excludeNamesREList)
-		}
-	} else if len(excludeNamesREList) > 0 {
-		// Only check to see if an exclude rule matches when there are no include rules defined
-		shouldInclude = excludeUserByREList(userName, excludeNamesREList)
-	} else {
-		shouldInclude = true
-	}
-
-	return shouldInclude
-}
 
 // List all IAM users in the AWS account and returns a slice of the UserNames
 // TODO: Implement exclusion by time filter
@@ -64,7 +24,7 @@ func getAllIamUsers(session *session.Session, region string, configObj config.Co
 	}
 
 	for _, user := range output.Users {
-		if shouldIncludeUser(*user.UserName, configObj.IAMUsers.IncludeRule.NamesRE, configObj.IAMUsers.ExcludeRule.NamesRE) {
+		if config.ShouldInclude(*user.UserName, configObj.IAMUsers.IncludeRule.NamesRE, configObj.IAMUsers.ExcludeRule.NamesRE) {
 			userNames = append(userNames, user.UserName)
 		}
 	}

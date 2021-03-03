@@ -108,3 +108,42 @@ func GetConfig(filePath string) (*Config, error) {
 
 	return &configObj, nil
 }
+
+func matchesInclude(name string, includeREs []*regexp.Regexp) bool {
+	for _, re := range includeREs {
+		if re.MatchString(name) {
+			return true
+		}
+	}
+	return false
+}
+
+func matchesExclude(name string, excludeREs []*regexp.Regexp) bool {
+	for _, re := range excludeREs {
+		if re.MatchString(name) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// ShouldInclude - Checks if a name should be included according to the inclusion and exclusion rules
+func ShouldInclude(name string, includeREs []*regexp.Regexp, excludeNamesREs []*regexp.Regexp) bool {
+	shouldInclude := false
+
+	if len(includeREs) > 0 {
+		// If any include rules are specified,
+		// only check to see if an exclude rule matches when an include rule matches the user
+		if matchesInclude(name, includeREs) {
+			shouldInclude = matchesExclude(name, excludeNamesREs)
+		}
+	} else if len(excludeNamesREs) > 0 {
+		// Only check to see if an exclude rule matches when there are no include rules defined
+		shouldInclude = matchesExclude(name, excludeNamesREs)
+	} else {
+		shouldInclude = true
+	}
+
+	return shouldInclude
+}
