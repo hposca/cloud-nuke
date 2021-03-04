@@ -8,71 +8,44 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// RawConfig - used to unmarshall the raw config file
-type RawConfig struct {
-	S3       rawResourceType `yaml:"s3"`
-	IAMUsers rawResourceType `yaml:"IAMUsers"`
-}
-
-type rawResourceType struct {
-	IncludeRule rawFilterRule `yaml:"include"`
-	ExcludeRule rawFilterRule `yaml:"exclude"`
-}
-
-type rawNamesRE []string
-
-type rawFilterRule struct {
-	NamesRE rawNamesRE `yaml:"names_regex"`
-}
-
 // Config - the config object we pass around
-// that is a parsed version of RawConfig
 type Config struct {
-	S3       ResourceType
-	IAMUsers ResourceType
+	S3       ResourceType `yaml:"s3"`
+	IAMUsers ResourceType `yaml:"IAMUsers"`
 }
 
-// ResourceType - the include and exclude
-// rules for a resource type
 type ResourceType struct {
-	IncludeRule FilterRule
-	ExcludeRule FilterRule
+	IncludeRule FilterRule `yaml:"include"`
+	ExcludeRule FilterRule `yaml:"exclude"`
 }
 
-type compiledNamesRE []*regexp.Regexp
-
-// FilterRule - contains regular expressions or plain text patterns
-// used to match against a resource type's properties
 type FilterRule struct {
-	NamesRE compiledNamesRE
+	NamesRE []Expression `yaml:"names_regex"`
 }
 
-// association - an ancillary internal struct that is used to represent a 1:1
-// association between compiledNamesRE and a RawREs.
-// This is used o indicate which compiled regular expression should be
-// associated with the raw ones retrieved from the configuration file.
-type association struct {
-	CompiledREs *compiledNamesRE
-	RawREs      rawNamesRE
+type Expression struct {
+	RE regexp.Regexp
 }
 
-// appendRegex - ancillary function to compile and append regular expressions
-// into the ConfigObj's right location
-func appendRegex(configNamesRE *compiledNamesRE, patterns rawNamesRE) error {
-	for _, pattern := range patterns {
-		re, err := regexp.Compile(pattern)
-		if err != nil {
-			return err
-		}
+// UnmarshalText - Internally used by yaml.Unmarshal to unmarshall an Expression field
+func (expression *Expression) UnmarshalText(data []byte) error {
+	var pattern string
 
-		*configNamesRE = append(*configNamesRE, re)
+	if err := yaml.Unmarshal(data, &pattern); err != nil {
+		return err
 	}
+
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return err
+	}
+
+	expression.RE = *re
 
 	return nil
 }
 
-// GetConfig - unmarshall the raw config file
-// and parse it into a config object.
+// GetConfig - Unmarshall the config file and parse it into a config object.
 func GetConfig(filePath string) (*Config, error) {
 	var configObj Config
 
@@ -86,24 +59,9 @@ func GetConfig(filePath string) (*Config, error) {
 		return nil, err
 	}
 
-	rawConfig := RawConfig{}
-
-	err = yaml.Unmarshal(yamlFile, &rawConfig)
+	err = yaml.Unmarshal(yamlFile, &configObj)
 	if err != nil {
 		return nil, err
-	}
-
-	associations := []association{
-		association{&configObj.S3.IncludeRule.NamesRE, rawConfig.S3.IncludeRule.NamesRE},
-		association{&configObj.S3.ExcludeRule.NamesRE, rawConfig.S3.ExcludeRule.NamesRE},
-		association{&configObj.IAMUsers.IncludeRule.NamesRE, rawConfig.IAMUsers.IncludeRule.NamesRE},
-		association{&configObj.IAMUsers.ExcludeRule.NamesRE, rawConfig.IAMUsers.ExcludeRule.NamesRE},
-	}
-
-	for _, association := range associations {
-		if err := appendRegex(association.CompiledREs, association.RawREs); err != nil {
-			return nil, err
-		}
 	}
 
 	return &configObj, nil
