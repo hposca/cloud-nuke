@@ -67,18 +67,18 @@ func GetConfig(filePath string) (*Config, error) {
 	return &configObj, nil
 }
 
-func matchesInclude(name string, includeREs []*regexp.Regexp) bool {
+func matchesInclude(name string, includeREs []Expression) bool {
 	for _, re := range includeREs {
-		if re.MatchString(name) {
+		if re.RE.MatchString(name) {
 			return true
 		}
 	}
 	return false
 }
 
-func matchesExclude(name string, excludeREs []*regexp.Regexp) bool {
+func matchesExclude(name string, excludeREs []Expression) bool {
 	for _, re := range excludeREs {
-		if re.MatchString(name) {
+		if re.RE.MatchString(name) {
 			return false
 		}
 	}
@@ -87,7 +87,7 @@ func matchesExclude(name string, excludeREs []*regexp.Regexp) bool {
 }
 
 // ShouldInclude - Checks if a name should be included according to the inclusion and exclusion rules
-func ShouldInclude(name string, includeREs []*regexp.Regexp, excludeNamesREs []*regexp.Regexp) bool {
+func ShouldInclude(name string, includeREs []Expression, excludeNamesREs []Expression) bool {
 	shouldInclude := false
 
 	if len(includeREs) > 0 {
