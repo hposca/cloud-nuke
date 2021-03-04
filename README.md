@@ -152,6 +152,7 @@ s3:
 ```
 
 #### Include and exclude together
+
 Now consider the following contrived example:
 
 ```yaml
@@ -201,7 +202,9 @@ cloud-nuke aws --resource-type iam --config path/to/file.yaml
 
 Given this command, `cloud-nuke` will nuke _only_ IAM Users, as specified by the `--resource-type iam` option.
 
-Now given the following config, the IAM Users that will be nuked are further filtered to only include ones that match any of the provided regular expressions. So a user named `some-nice-user-name` would be deleted, but a user named `intersting-user-name` would not.
+The config file parameters are identical to the ones of `s3` with the only difference being the key name: `IAMUsers`.
+
+As an example, in the following config file, a user named `some-nice-user-name` would be deleted but a user named `interesting-user-name` would not.
 
 ```yaml
 IAMUsers:
@@ -210,26 +213,6 @@ IAMUsers:
       - ^some-.*-user-name$
       - .*-cool-name-.*
 ```
-
-#### Include and exclude together
-
-Now consider the following contrived example:
-
-```yaml
-IAMUsers:
-  include:
-    names_regex:
-      - ^some-.*-user-name$
-      - .*-cool-name-.*
-  exclude:
-    names_regex:
-      - myself
-      - my-cool-name-friend
-```
-
-The intention is to delete all the IAM Users that match the include rules but not the exclude rules. Filtering is commutative, meaning that you should get the same result whether you apply the include filters before or after the exclude filters.
-
-The result of these filters applied in either order will be a set of IAM Users that match `^some-.*-user-name$` as long as they do not also contain `myself` or `myfriend`. The rule to include IAM Users matching `.*-cool-name-.*` is negated by the rule to exclude those matching `my-cool-name-friend`.
 
 #### CLI options override config file options
 
