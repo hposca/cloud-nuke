@@ -1,7 +1,6 @@
 package aws
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -29,11 +28,6 @@ func TestListIamUsers(t *testing.T) {
 	// userNames, err := getAllIamUsers(session, time.Now().Add(1*time.Hour*-1))
 	userNames, err := getAllIamUsers(session, config.Config{})
 	require.NoError(t, err)
-
-	// TODO: Remove this, just for temporary visual confirmation
-	for _, name := range userNames {
-		fmt.Printf("this is the name: %s\n", awsgo.StringValue(name))
-	}
 
 	assert.NotEmpty(t, userNames)
 }
